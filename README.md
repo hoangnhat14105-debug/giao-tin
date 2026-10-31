@@ -57,6 +57,22 @@ C:/xampp/php/php.exe tests/smoke.php
 - Tắt `display_errors` trên production và cấu hình PHP lưu error log bên ngoài thư mục công khai.
 - Sao lưu MySQL định kỳ trước khi nâng cấp; dữ liệu giao hàng được lưu bền vững trong MySQL.
 
+### Deploy lên Render
+
+Repo đã có `Dockerfile` cho Render. Cần một MySQL/MariaDB bên ngoài; Render Web Service không tự cung cấp database MySQL cho ứng dụng này.
+
+1. Tạo database MySQL 8+ hoặc MariaDB 10.4+ ở nhà cung cấp có thể kết nối từ Render. Cho phép kết nối mạng từ Render theo hướng dẫn của nhà cung cấp và ghi lại host, port, database, username, password.
+2. Push repo lên GitHub, vào Render chọn **New → Web Service**, kết nối repo và chọn runtime **Docker**. Để Render dùng `Dockerfile` ở thư mục gốc; ứng dụng lắng nghe port `10000` (giá trị `PORT` mặc định của Render).
+3. Trong **Environment** của Web Service, thêm `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASS` theo thông tin MySQL và `APP_ENV=production`. Không commit `.env`; Docker cũng loại `.env` khỏi image.
+4. Khởi tạo database và tài khoản quản trị một lần từ máy có PHP CLI, sau khi cấu hình các biến `DB_*` trỏ tới database ở trên:
+
+   ```powershell
+   C:/xampp/php/php.exe scripts/install.php --email=admin@example.com --password="mat-khau-it-nhat-10-ky-tu"
+   ```
+
+   Tài khoản database cần quyền tạo database và bảng trong lần cài đặt đầu tiên. Nếu nhà cung cấp đã tạo sẵn database, cấp quyền tạo schema cho tài khoản đó hoặc dùng tài khoản quản trị database để chạy bước cài đặt. Bỏ `--demo` để không tạo dữ liệu mẫu.
+5. Render tự build và deploy khi push commit. Mở URL Render để kiểm tra; ứng dụng cần kết nối database đã khởi tạo. Lưu credential chỉ trong Render Environment, bật HTTPS và sao lưu database định kỳ.
+
 Chưa tích hợp GPS, bản đồ, SMS hay cổng thanh toán. Đối soát là thao tác xác nhận nội bộ sau khi thanh toán thực tế. Giới hạn đăng nhập hiện áp dụng theo phiên; bổ sung rate limit theo IP ở reverse proxy khi triển khai công khai, kể cả đường dẫn tra cứu.
 
 ## Phân quyền, trang tài xế và tra cứu
