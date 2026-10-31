@@ -8,7 +8,29 @@ foreach (is_file(__DIR__.'/../.env') ? file(__DIR__.'/../.env', FILE_IGNORE_NEW_
 }
 function db(): PDO {
     static $pdo;
-    if (!$pdo) $pdo = new PDO('mysql:host='.(getenv('DB_HOST') ?: '127.0.0.1').';port='.(getenv('DB_PORT') ?: '3306').';dbname='.(getenv('DB_NAME') ?: 'giao_tin').';charset=utf8mb4', getenv('DB_USER') ?: 'root', getenv('DB_PASS') ?: '', [PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE=>PDO::FETCH_ASSOC, PDO::ATTR_EMULATE_PREPARES=>false]);
+    if (!$pdo) {
+        $dsn = 'mysql:host='.(getenv('DB_HOST') ?: '127.0.0.1').';port='.(getenv('DB_PORT') ?: '3306').';dbname='.(getenv('DB_NAME') ?: 'giao_tin').';charset=utf8mb4';
+        $options = [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES => false,
+        ];
+
+        $sslMode = getenv('DB_SSL_MODE') ?: '';
+        $sslVerify = getenv('DB_SSL_VERIFY_SERVER_CERT');
+        if ($sslMode !== '' || $sslVerify !== false) {
+            $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = ($sslVerify === false) ? false : true;
+        }
+
+        $sslCa  = getenv('DB_SSL_CA') ?: '';
+        $sslCert = getenv('DB_SSL_CERT') ?: '';
+        $sslKey = getenv('DB_SSL_KEY') ?: '';
+        if ($sslCa !== '') $options[PDO::MYSQL_ATTR_SSL_CA] = $sslCa;
+        if ($sslCert !== '') $options[PDO::MYSQL_ATTR_SSL_CERT] = $sslCert;
+        if ($sslKey !== '') $options[PDO::MYSQL_ATTR_SSL_KEY] = $sslKey;
+
+        $pdo = new PDO($dsn, getenv('DB_USER') ?: 'root', getenv('DB_PASS') ?: '', $options);
+    }
     return $pdo;
 }
 function query(string $sql, array $args = []): PDOStatement { $q=db()->prepare($sql); $q->execute($args); return $q; }
